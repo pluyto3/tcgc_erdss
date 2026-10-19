@@ -1,0 +1,9 @@
+@extends('layouts.app', ['title' => 'Employee experience', 'module' => 'employee_perspective'])
+@section('content')
+<div class="page-heading"><div><div class="eyebrow">LISTEN · UNDERSTAND · RESPOND</div><h1>Make space for every perspective<span class="heading-dot">.</span></h1><p>Understand the experiences behind retention, alongside the numbers.</p></div><span class="subtle-badge">7 research themes</span></div>
+<div class="context-note"><x-icon name="message" /><span>The themes below come from the supplied qualitative research summary. They are distinct from the current feedback counts.</span></div>
+<div class="experience-grid">@foreach(config('research.themes') as $index => $theme)<article class="panel experience-card"><div class="experience-top"><span class="theme-icon"><x-icon :name="$theme['icon']" /></span><span class="subtle-badge">{{ $theme['tag'] }}</span></div><span class="theme-number">THEME {{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</span><h2>{{ $theme['title'] }}</h2><p>{{ $theme['detail'] }}</p></article>@endforeach</div>
+<div class="section-heading"><div><h2>Current feedback & perceptions</h2><p>Choose an assessment period to review available aggregate results.</p></div></div>
+<x-dataset-filter :unit-scope="$unitScope" :baseline="$baseline" :demo="$demo" :periods="$periods" :period="$period" :departments="$departments" :department-id="$departmentId" :scope="$scope" />
+@unless($baseline)<div class="overview-grid"><section class="panel"><h2>Tagged feedback themes</h2><p class="muted">Counts below {{ $minimum }} comments are suppressed.</p>@forelse($themes as $theme)<div class="stat-row"><span>{{ $theme['name'] }}</span><strong>{{ $theme['count'] ?? 'Suppressed' }}</strong></div>@empty<div class="empty">No publishable theme counts for this assessment.</div>@endforelse</section><section class="panel"><h2>Employee perceptions</h2><x-factor-bars :factors="$factors" :lowest="$lowest" /></section></div>@endunless
+@endsection

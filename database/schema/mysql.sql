@@ -1,0 +1,355 @@
+CREATE TABLE IF NOT EXISTS roles (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS departments (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(180) NOT NULL,
+  code VARCHAR(50) UNIQUE,
+  status VARCHAR(30) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS positions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(180) NOT NULL,
+  status VARCHAR(30) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS employee_categories (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  status VARCHAR(30) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS employment_types (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  status VARCHAR(30) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS employees (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  employee_no VARCHAR(100) NOT NULL UNIQUE,
+  first_name VARCHAR(120) NOT NULL,
+  middle_name VARCHAR(120) NULL,
+  last_name VARCHAR(120) NOT NULL,
+  email VARCHAR(180) NULL,
+  department_id BIGINT UNSIGNED NULL,
+  position_id BIGINT UNSIGNED NULL,
+  category_id BIGINT UNSIGNED NULL,
+  employment_type_id BIGINT UNSIGNED NULL,
+  date_hired DATE NULL,
+  employment_status VARCHAR(30) DEFAULT 'active',
+  archived_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_emp_dept FOREIGN KEY (department_id) REFERENCES departments(id),
+  CONSTRAINT fk_emp_pos FOREIGN KEY (position_id) REFERENCES positions(id),
+  CONSTRAINT fk_emp_cat FOREIGN KEY (category_id) REFERENCES employee_categories(id),
+  CONSTRAINT fk_emp_type FOREIGN KEY (employment_type_id) REFERENCES employment_types(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  role_id BIGINT UNSIGNED NOT NULL,
+  employee_id BIGINT UNSIGNED NULL,
+  name VARCHAR(180) NOT NULL,
+  email VARCHAR(180) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  status VARCHAR(30) DEFAULT 'active',
+  last_login_at DATETIME NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_user_role FOREIGN KEY (role_id) REFERENCES roles(id),
+  CONSTRAINT fk_user_emp FOREIGN KEY (employee_id) REFERENCES employees(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS employee_separations (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  employee_id BIGINT UNSIGNED NOT NULL,
+  separation_date DATE NOT NULL,
+  separation_type VARCHAR(100) NOT NULL,
+  notes TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_sep_emp FOREIGN KEY (employee_id) REFERENCES employees(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS hrm_factors (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(180) NOT NULL UNIQUE,
+  description TEXT NULL,
+  display_order INT DEFAULT 0,
+  status VARCHAR(30) DEFAULT 'active',
+  is_outcome TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS assessment_periods (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  start_date DATE NULL,
+  end_date DATE NULL,
+  status VARCHAR(30) DEFAULT 'draft',
+  scale_min INT DEFAULT 1,
+  scale_max INT DEFAULT 4,
+  scale_labels TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS survey_questions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  period_id BIGINT UNSIGNED NOT NULL,
+  factor_id BIGINT UNSIGNED NOT NULL,
+  question_text TEXT NOT NULL,
+  display_order INT DEFAULT 0,
+  is_required TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_sq_period FOREIGN KEY (period_id) REFERENCES assessment_periods(id),
+  CONSTRAINT fk_sq_factor FOREIGN KEY (factor_id) REFERENCES hrm_factors(id),
+  INDEX idx_sq_period_factor (period_id, factor_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS survey_participation (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  period_id BIGINT UNSIGNED NOT NULL,
+  employee_id BIGINT UNSIGNED NOT NULL,
+  completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_participation (period_id, employee_id),
+  CONSTRAINT fk_sp_period FOREIGN KEY (period_id) REFERENCES assessment_periods(id),
+  CONSTRAINT fk_sp_emp FOREIGN KEY (employee_id) REFERENCES employees(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS survey_responses (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  period_id BIGINT UNSIGNED NOT NULL,
+  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  snapshot_department_id BIGINT UNSIGNED NULL,
+  snapshot_category_id BIGINT UNSIGNED NULL,
+  snapshot_employment_type_id BIGINT UNSIGNED NULL,
+  CONSTRAINT fk_sr_period FOREIGN KEY (period_id) REFERENCES assessment_periods(id),
+  INDEX idx_sr_period_dept (period_id, snapshot_department_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS survey_response_items (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  response_id BIGINT UNSIGNED NOT NULL,
+  question_id BIGINT UNSIGNED NOT NULL,
+  response_value INT NOT NULL,
+  CONSTRAINT fk_sri_response FOREIGN KEY (response_id) REFERENCES survey_responses(id) ON DELETE CASCADE,
+  CONSTRAINT fk_sri_question FOREIGN KEY (question_id) REFERENCES survey_questions(id),
+  INDEX idx_sri_response (response_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS feedback_categories (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(180) NOT NULL UNIQUE,
+  factor_id BIGINT UNSIGNED NULL,
+  status VARCHAR(30) DEFAULT 'active',
+  CONSTRAINT fk_fbcat_factor FOREIGN KEY (factor_id) REFERENCES hrm_factors(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS feedback_themes (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(180) NOT NULL UNIQUE,
+  status VARCHAR(30) DEFAULT 'active'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS feedback (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  period_id BIGINT UNSIGNED NULL,
+  category_id BIGINT UNSIGNED NULL,
+  body TEXT NOT NULL,
+  is_anonymous TINYINT(1) DEFAULT 1,
+  submitter_employee_id BIGINT UNSIGNED NULL,
+  snapshot_department_id BIGINT UNSIGNED NULL,
+  review_status VARCHAR(50) DEFAULT 'new',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_fb_period FOREIGN KEY (period_id) REFERENCES assessment_periods(id),
+  CONSTRAINT fk_fb_cat FOREIGN KEY (category_id) REFERENCES feedback_categories(id),
+  CONSTRAINT fk_fb_emp FOREIGN KEY (submitter_employee_id) REFERENCES employees(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS feedback_theme_links (
+  feedback_id BIGINT UNSIGNED NOT NULL,
+  theme_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (feedback_id, theme_id),
+  CONSTRAINT fk_ftl_feedback FOREIGN KEY (feedback_id) REFERENCES feedback(id) ON DELETE CASCADE,
+  CONSTRAINT fk_ftl_theme FOREIGN KEY (theme_id) REFERENCES feedback_themes(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS research_baselines (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  factor_id BIGINT UNSIGNED NULL,
+  metric_key VARCHAR(150) NOT NULL,
+  value DECIMAL(10,4) NOT NULL,
+  source VARCHAR(255) NULL,
+  study_label VARCHAR(255) NULL,
+  CONSTRAINT fk_rb_factor FOREIGN KEY (factor_id) REFERENCES hrm_factors(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS retention_driver_models (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  source VARCHAR(255) NULL,
+  is_baseline TINYINT(1) DEFAULT 1,
+  valid_from DATE NULL,
+  notes TEXT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS retention_driver_coefficients (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  model_id BIGINT UNSIGNED NOT NULL,
+  factor_id BIGINT UNSIGNED NOT NULL,
+  coefficient DECIMAL(10,4) NOT NULL,
+  coefficient_type VARCHAR(50) DEFAULT 'beta',
+  CONSTRAINT fk_rdc_model FOREIGN KEY (model_id) REFERENCES retention_driver_models(id),
+  CONSTRAINT fk_rdc_factor FOREIGN KEY (factor_id) REFERENCES hrm_factors(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS action_categories (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS decision_rules (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  threshold_low DECIMAL(10,4) NULL,
+  threshold_high DECIMAL(10,4) NULL,
+  stability_band DECIMAL(10,4) DEFAULT 0.10,
+  resulting_category VARCHAR(100) NULL,
+  active TINYINT(1) DEFAULT 1,
+  is_prototype TINYINT(1) DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS priority_areas (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  period_id BIGINT UNSIGNED NOT NULL,
+  factor_id BIGINT UNSIGNED NOT NULL,
+  department_id BIGINT UNSIGNED NULL,
+  current_score DECIMAL(10,4) NULL,
+  previous_score DECIMAL(10,4) NULL,
+  trend VARCHAR(50) NULL,
+  priority_level VARCHAR(50) NULL,
+  action_category VARCHAR(50) NULL,
+  theme_count INT DEFAULT 0,
+  suggested_recommendation VARCHAR(255) NULL,
+  status VARCHAR(50) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_pa_period FOREIGN KEY (period_id) REFERENCES assessment_periods(id),
+  CONSTRAINT fk_pa_factor FOREIGN KEY (factor_id) REFERENCES hrm_factors(id),
+  CONSTRAINT fk_pa_dept FOREIGN KEY (department_id) REFERENCES departments(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS recommendation_library (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NULL,
+  status VARCHAR(30) DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS recommendation_factors (
+  recommendation_id BIGINT UNSIGNED NOT NULL,
+  factor_id BIGINT UNSIGNED NOT NULL,
+  PRIMARY KEY (recommendation_id, factor_id),
+  CONSTRAINT fk_rf_rec FOREIGN KEY (recommendation_id) REFERENCES recommendation_library(id) ON DELETE CASCADE,
+  CONSTRAINT fk_rf_factor FOREIGN KEY (factor_id) REFERENCES hrm_factors(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS interventions (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(100) NOT NULL UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  factor_id BIGINT UNSIGNED NULL,
+  priority_area_id BIGINT UNSIGNED NULL,
+  recommendation_id BIGINT UNSIGNED NULL,
+  issue TEXT NULL,
+  description TEXT NULL,
+  objective TEXT NULL,
+  responsible_department_id BIGINT UNSIGNED NULL,
+  responsible_user_id BIGINT UNSIGNED NULL,
+  start_date DATE NULL,
+  target_date DATE NULL,
+  budget_amount DECIMAL(12,2) DEFAULT 0,
+  expected_outcome TEXT NULL,
+  notes TEXT NULL,
+  status VARCHAR(50) DEFAULT 'Planned',
+  approval_status VARCHAR(50) DEFAULT 'Pending',
+  approved_by BIGINT UNSIGNED NULL,
+  approved_at DATETIME NULL,
+  approval_notes TEXT NULL,
+  is_public TINYINT(1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_int_factor FOREIGN KEY (factor_id) REFERENCES hrm_factors(id),
+  CONSTRAINT fk_int_priority FOREIGN KEY (priority_area_id) REFERENCES priority_areas(id),
+  CONSTRAINT fk_int_rec FOREIGN KEY (recommendation_id) REFERENCES recommendation_library(id),
+  CONSTRAINT fk_int_dept FOREIGN KEY (responsible_department_id) REFERENCES departments(id),
+  CONSTRAINT fk_int_user FOREIGN KEY (responsible_user_id) REFERENCES users(id),
+  CONSTRAINT fk_int_approved_by FOREIGN KEY (approved_by) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS intervention_updates (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  intervention_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  status VARCHAR(50) NULL,
+  note TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_iu_int FOREIGN KEY (intervention_id) REFERENCES interventions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_iu_user FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS intervention_evaluations (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  intervention_id BIGINT UNSIGNED NOT NULL,
+  factor_id BIGINT UNSIGNED NOT NULL,
+  before_period_id BIGINT UNSIGNED NOT NULL,
+  after_period_id BIGINT UNSIGNED NOT NULL,
+  before_score DECIMAL(10,4) NULL,
+  after_score DECIMAL(10,4) NULL,
+  difference DECIMAL(10,4) NULL,
+  result_label VARCHAR(100) NULL,
+  evaluator_note TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ie_int FOREIGN KEY (intervention_id) REFERENCES interventions(id),
+  CONSTRAINT fk_ie_factor FOREIGN KEY (factor_id) REFERENCES hrm_factors(id),
+  CONSTRAINT fk_ie_before FOREIGN KEY (before_period_id) REFERENCES assessment_periods(id),
+  CONSTRAINT fk_ie_after FOREIGN KEY (after_period_id) REFERENCES assessment_periods(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NULL,
+  action VARCHAR(100) NOT NULL,
+  entity VARCHAR(100) NULL,
+  entity_id BIGINT NULL,
+  summary TEXT NULL,
+  ip_address VARCHAR(100) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_audit_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS system_settings (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  key_name VARCHAR(180) NOT NULL UNIQUE,
+  value TEXT NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,0 +1,5 @@
+<?php
+
+$min=(int)setting($db,'minimum_group_size',5);
+echo '<div class="card"><h2>How TCGC-ERDSS protects employee responses</h2><p>Survey participation is stored separately from survey answers. The anonymous response table does not contain an employee ID, so authorized staff can know whether an employee completed an assessment without linking that employee to a specific answer set.</p><p>Anonymous feedback does not store the submitter employee ID. Named feedback is stored only when the employee intentionally chooses the named option and policy allows it.</p><p>Survey results are presented as aggregates. Groups with fewer than <strong>'.e((string)$min).'</strong> respondents are suppressed to reduce re-identification risk.</p><p>The system does not assign resignation-risk scores to individual employees, rank employees by retention risk, or recommend termination or discipline.</p><div class="notice">TCGC should maintain its approved privacy notice, data-retention policy, access-control procedures, and Data Protection Officer review for live institutional deployment.</div></div>';
+

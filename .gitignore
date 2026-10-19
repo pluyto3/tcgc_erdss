@@ -1,0 +1,11 @@
+/.env
+/vendor/
+/storage/*
+!/storage/.gitignore
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+/database/*.sqlite*
+/public/uploads/*
+!/public/uploads/.htaccess
+/.phpunit.cache/
+/.phpunit.result.cache

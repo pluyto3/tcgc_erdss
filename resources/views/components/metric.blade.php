@@ -1,0 +1,2 @@
+@props(['label', 'value', 'hint' => '', 'icon' => 'chart', 'tone' => 'purple', 'suffix' => '', 'tag' => ''])
+<article {{ $attributes->merge(['class' => 'metric-card']) }}><div class="metric-top"><span>{{ $label }}</span><span class="metric-icon {{ $tone }}"><x-icon :name="$icon" /></span></div><div class="metric-value">{{ $value }}<span>{{ $suffix }}</span></div><div class="metric-bottom">@if($tag)<span class="badge badge-good">{{ $tag }}</span>@endif<span>{{ $hint }}</span></div></article>
