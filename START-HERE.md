@@ -1,5 +1,9 @@
 # Test the downloadable project locally
 
+For browser instructions such as adding departments, employees and accounts, use [Step-by-step user guide](docs/STEP-BY-STEP-USER-GUIDE.md).
+
+For MySQL and real institutional data, follow `docs/CLIENT-HANDOVER-GUIDE.md` instead of the SQLite demo helper below. It includes private administrator setup, the approved questionnaire, paper-form transcription/import, all menu features, and the client demonstration sequence. See `docs/MANUSCRIPT-ALIGNMENT.md` for the manuscript comparison and unresolved research questions.
+
 This package includes the refactored Laravel application and its Composer dependencies. PHP itself is not included. Use PHP 8.4.1 or newer with PDO SQLite, mbstring, OpenSSL, and fileinfo enabled. The bundled dependency versions require PHP 8.4.1 even though Laravel 13 itself supports PHP 8.3. XAMPP installations with older PHP versions need an upgrade before using this package.
 
 1. Extract the ZIP to a new folder. Keep it separate from any existing project you want to retain.

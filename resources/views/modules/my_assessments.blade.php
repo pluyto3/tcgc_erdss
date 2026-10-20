@@ -1,7 +1,9 @@
 <?php
 
 if(isset($query['take'])){
-    $pid=(int)$query['take'];$s=$db->prepare('SELECT * FROM assessment_periods WHERE id=? AND status="active"');$s->execute([$pid]);$period=$s->fetch();
+    $pid=(int)$query['take'];
+    if(period_has_paper_responses($db,$pid)){echo '<div class="notice">Paper form import; completion not linked. This historical assessment does not accept online submissions.</div>';return;}
+    $s=$db->prepare('SELECT * FROM assessment_periods WHERE id=? AND status="active"');$s->execute([$pid]);$period=$s->fetch();
     if(!$period){echo '<div class="alert error">Assessment is not available.</div>';return;}
     $s=$db->prepare('SELECT COUNT(*) FROM survey_participation WHERE period_id=? AND employee_id=?');$s->execute([$pid,$eid]);if($s->fetchColumn()){echo '<div class="notice">You already completed this assessment.</div>';return;}
     $s=$db->prepare('SELECT q.*,f.name factor_name FROM survey_questions q JOIN hrm_factors f ON f.id=q.factor_id WHERE q.period_id=? ORDER BY f.display_order,q.display_order');$s->execute([$pid]);$rows=$s->fetchAll();
@@ -12,6 +14,11 @@ if(isset($query['take'])){
 }
 $periods=$db->query("SELECT * FROM assessment_periods WHERE status IN ('active','closed') ORDER BY start_date DESC")->fetchAll();
 echo '<div class="table-wrap"><table><thead><tr><th>Assessment</th><th>Period</th><th>Status</th><th>Your Status</th><th></th></tr></thead><tbody>';
-foreach($periods as $p){$s=$db->prepare('SELECT COUNT(*) FROM survey_participation WHERE period_id=? AND employee_id=?');$s->execute([$p['id'],$eid]);$done=(bool)$s->fetchColumn();echo '<tr><td><strong>'.e($p['title']).'</strong><br><span class="muted small">'.e($p['description']).'</span></td><td>'.e($p['start_date']).' – '.e($p['end_date']).'</td><td>'.badge(ucfirst($p['status']),$p['status']==='active'?'good':'neutral').'</td><td>'.($done?badge('Completed','good'):badge('Not completed','warn')).'</td><td>'.(!$done&&$p['status']==='active'?'<a class="btn btn-primary" href="?page=my_assessments&take='.(int)$p['id'].'">Take assessment</a>':'').'</td></tr>';}
+foreach($periods as $p){
+    $paper=period_has_paper_responses($db,(int)$p['id']);
+    $s=$db->prepare('SELECT COUNT(*) FROM survey_participation WHERE period_id=? AND employee_id=?');$s->execute([$p['id'],$eid]);$done=(bool)$s->fetchColumn();
+    $completion=$paper?badge('Paper form import; completion not linked','neutral'):($done?badge('Completed','good'):badge('Not completed','warn'));
+    echo '<tr><td><strong>'.e($p['title']).'</strong><br><span class="muted small">'.e($p['description']).'</span></td><td>'.e($p['start_date']).' – '.e($p['end_date']).'</td><td>'.badge(ucfirst($p['status']),$p['status']==='active'?'good':'neutral').'</td><td>'.$completion.'</td><td>'.(!$paper&&!$done&&$p['status']==='active'?'<a class="btn btn-primary" href="?page=my_assessments&take='.(int)$p['id'].'">Take assessment</a>':'').'</td></tr>';
+}
 echo '</tbody></table></div>';
 

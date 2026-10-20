@@ -53,17 +53,7 @@ function seed_database(PDO $db, array $config): void
         }
 
         // The outcome measure is stored separately from the eight HRM predictor factors used in the capstone instrument.
-        $factors = [
-            ['Employee Retention', 'Intention to remain and commitment to continued employment at TCGC', 0, 1],
-            ['Compensation and Benefits', 'Compensation fairness, adequacy, understanding and benefits support', 1, 0],
-            ['Career Development', 'Professional advancement, responsibility and career-growth opportunities', 2, 0],
-            ['Training and Development', 'Job-relevant training and professional development opportunities', 3, 0],
-            ['Performance Management', 'Clear expectations, fair evaluation, feedback, improvement and recognition', 4, 0],
-            ['Work Environment', 'Safety, resources, respect, communication, workload and working conditions', 5, 0],
-            ['Leadership and Management', 'Supervisor support, fairness, communication, listening and recognition', 6, 0],
-            ['Employee Engagement', 'Enthusiasm, discretionary effort, involvement, motivation and meaningful work', 7, 0],
-            ['Job Satisfaction', 'Overall satisfaction with work, opportunities, recognition and employment conditions', 8, 0],
-        ];
+        $factors = config('instrument.factors');
         foreach ($factors as $f) {
             $existing = $db->prepare('SELECT id FROM hrm_factors WHERE name=?');
             $existing->execute([$f[0]]);
@@ -86,82 +76,7 @@ function seed_database(PDO $db, array $config): void
         }
 
         // Official starting questionnaire transcribed from the approved capstone instrument.
-        $questionnaire = [
-            'Employee Retention' => [
-                'I intend to continue working at TCGC for the foreseeable future.',
-                'I plan to remain employed at TCGC as long as suitable opportunities are available to me.',
-                'I would recommend TCGC as a good place to work.',
-                'I feel committed to continuing my employment with TCGC.',
-                'I rarely think about leaving TCGC.',
-                'I would prefer to build my career at TCGC rather than seek employment elsewhere.',
-                'I expect to still be working at TCGC in the next few years.',
-                'I am willing to remain with TCGC even when I encounter challenges in my work.',
-            ],
-            'Compensation and Benefits' => [
-                'I am satisfied with the compensation I receive for the work I perform.',
-                'The compensation provided by TCGC is fair in relation to my responsibilities.',
-                'TCGC provides benefits that adequately support employees’ needs.',
-                'I understand the compensation and benefits provided to employees by TCGC.',
-                'TCGC administers compensation and benefits fairly among employees.',
-                'The compensation and benefits I receive encourage me to remain with TCGC.',
-            ],
-            'Career Development' => [
-                'TCGC provides opportunities for employees to advance professionally.',
-                'Employees are given opportunities to assume greater responsibilities and roles.',
-                'Career advancement opportunities are communicated clearly to employees.',
-                'TCGC provides opportunities for employees to develop competencies needed for career advancement.',
-                'Promotion and advancement decisions are based on fair and appropriate criteria.',
-                'I can see opportunities for meaningful career growth within TCGC.',
-            ],
-            'Training and Development' => [
-                'TCGC provides training programs relevant to my job responsibilities.',
-                'I am given adequate opportunities to participate in professional development activities.',
-                'Training opportunities help me improve my knowledge and skills.',
-                'TCGC supports employees who seek professional growth and development.',
-                'Training opportunities are distributed fairly among employees.',
-                'The training and development opportunities available to me encourage me to remain with TCGC.',
-            ],
-            'Performance Management' => [
-                'My job responsibilities and performance expectations are clearly communicated.',
-                'My performance is evaluated using fair and appropriate criteria.',
-                'I receive useful feedback regarding my work performance.',
-                'Performance evaluation results are used to identify areas for improvement.',
-                'Good performance is appropriately recognized by the institution.',
-                'The performance management system encourages me to improve my work and remain with TCGC.',
-            ],
-            'Work Environment' => [
-                'TCGC provides a safe and conducive environment for employees to perform their work.',
-                'I have adequate resources and facilities to perform my responsibilities effectively.',
-                'Employees in my workplace generally treat one another with respect.',
-                'Communication within my workplace is generally effective.',
-                'My workload is manageable within the available working time and resources.',
-                'TCGC provides a work environment that encourages me to remain with the institution.',
-            ],
-            'Leadership and Management' => [
-                'My immediate supervisor communicates expectations clearly.',
-                'My supervisor treats employees fairly and respectfully.',
-                'My supervisor provides support when I encounter work-related difficulties.',
-                'Management listens to employees’ concerns and suggestions.',
-                'Management recognizes employees’ contributions to the institution.',
-                'The leadership of TCGC contributes positively to my decision to remain with the institution.',
-            ],
-            'Employee Engagement' => [
-                'I feel enthusiastic about the work I perform at TCGC.',
-                'I am willing to exert extra effort to help TCGC achieve its objectives.',
-                'I feel personally involved in the success of the institution.',
-                'I am motivated to perform my responsibilities to the best of my ability.',
-                'I feel that my work at TCGC is meaningful.',
-                'I feel a strong sense of connection to the work and goals of TCGC.',
-            ],
-            'Job Satisfaction' => [
-                'Overall, I am satisfied with my job at TCGC.',
-                'I am satisfied with the nature of the work I perform.',
-                'I am satisfied with the opportunities available to me in my current job.',
-                'I am satisfied with the recognition I receive for my work.',
-                'I am satisfied with the overall conditions of my employment.',
-                'My experience working at TCGC generally meets my expectations.',
-            ],
-        ];
+        $questionnaire = config('instrument.questions');
         foreach ([1, 2] as $pid) {
             $order = 1;
             foreach ($questionnaire as $factorName => $questions) {
@@ -275,8 +190,8 @@ function seed_database(PDO $db, array $config): void
             ['assessment_frequency', 'Semestral'],
             ['client_validation_status', 'Approved'],
             ['system_version', '1.0 Final'],
-            ['primary_color', '#173a5e'],
-            ['accent_color', '#2f6f98'],
+            ['primary_color', config('branding.primary_color')],
+            ['accent_color', config('branding.accent_color')],
             ['report_footer', 'TCGC Employee Retention Decision Support System'],
             ['logo_path', ''],
         ];

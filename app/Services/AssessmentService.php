@@ -15,6 +15,9 @@ class AssessmentService
             if (! $period || ($period->start_date && $period->start_date > today()->toDateString()) || ($period->end_date && $period->end_date < today()->toDateString())) {
                 throw ValidationException::withMessages(['period_id' => 'This assessment is not currently open.']);
             }
+            if (period_has_paper_responses(db(), $periodId)) {
+                throw ValidationException::withMessages(['period_id' => 'This assessment contains imported paper responses and cannot accept online submissions. Use a separate assessment period.']);
+            }
             $employee = Employee::query()->whereNull('archived_at')->where('employment_status', 'active')->findOrFail($employeeId);
             if (DB::table('survey_participation')->where('period_id', $periodId)->where('employee_id', $employeeId)->exists()) {
                 throw ValidationException::withMessages(['period_id' => 'You have already completed this assessment.']);

@@ -3,9 +3,6 @@
     $title = $title ?? config('modules.'.$module.'.title', 'Retention overview');
     $user = auth()->user();
     $navigation = collect(config('modules'))->filter(fn ($item) => in_array(role(), $item['roles'], true))->groupBy('group', preserveKeys: true);
-    $primary = $settings->get('primary_color', '#173a5e');
-    $accent = $settings->get('accent_color', '#2f6f98');
-    $logo = $settings->get('logo_path', '');
     $demo = $settings->get('demo_mode', '1') === '1';
 @endphp
 <!doctype html>
@@ -14,11 +11,9 @@
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}"><meta name="color-scheme" content="light">
     <title>{{ $title }} · {{ $settings->get('system_name', 'TCGC Retention DSS') }}</title>
-    <link rel="stylesheet" href="{{ asset('assets/style.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/style.css') }}?v=4">
     <script src="{{ asset('assets/app.js') }}?v=2" defer></script>
-    @if(preg_match('/^#[a-f0-9]{6}$/i', $primary) && preg_match('/^#[a-f0-9]{6}$/i', $accent))
-        <style>:root { --brand-primary: {{ $primary }}; --brand-accent: {{ $accent }}; }</style>
-    @endif
+    <x-brand-theme />
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to content</a>
@@ -26,8 +21,7 @@
 <aside class="sidebar" id="main-navigation" aria-label="Main navigation">
     <button type="button" class="icon-button mobile-nav-close" data-close-nav aria-label="Close navigation">×</button>
     <a href="{{ route('dashboard') }}" class="brand">
-        @if($logo && preg_match('~^uploads/[a-zA-Z0-9._-]+$~', $logo))<img class="brand-mark" src="{{ asset($logo) }}" alt="TCGC logo">
-        @else<span class="brand-mark"><x-icon name="layers" /></span>@endif
+        <x-institution-logo />
         <span><strong>TCGC<span class="brand-dot">.</span></strong><small>RETENTION DSS</small></span>
     </a>
     <div class="institution-label">{{ $settings->get('institution_name', 'Tangub City Global College') }}</div>
@@ -59,7 +53,7 @@
         @if(session('status'))<div class="alert success" role="status">{{ session('status') }}</div>@endif
         @hasSection('content')@yield('content')
         @else
-            <div class="page-heading"><div><div class="eyebrow">{{ config('modules.'.$module.'.group', 'Workspace') }}</div><h1>{{ $title }}</h1><p>Manage your institution’s retention information and workflows.</p></div></div>
+            <div class="page-heading"><div><div class="eyebrow">{{ config('modules.'.$module.'.group', 'Workspace') }}</div><h1>{{ $title }}</h1><p>{{ config('modules.'.$module.'.description', 'Review your institution’s employee retention information.') }}</p></div></div>
             @if($demo)<div class="context-note"><x-icon name="shield" /><span>Demonstration workspace · Employee and survey records are synthetic.</span></div>@endif
             <div class="module-content">{!! $content ?? '' !!}</div>
         @endif

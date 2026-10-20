@@ -2,6 +2,8 @@
 
 A PHP application built on Laravel 13, Blade HTML views, shared CSS, and vanilla JavaScript. The included locked dependencies require PHP 8.4.1 or newer. It preserves the original employee, assessment, feedback, intervention approval, monitoring, reporting, account, and administration workflows.
 
+For institutional MySQL setup and a walkthrough of every feature, use `docs/CLIENT-HANDOVER-GUIDE.md`. The final manuscript comparison is in `docs/MANUSCRIPT-ALIGNMENT.md`. Blank paper transcription templates and the exact 56-item codebook are in `docs/templates/TCGC-Paper-Response-Entry.xlsx`. Preserve the demonstration database and initialize a separate real database; the ordinary demo seeder is not an institutional installer.
+
 ## Run locally
 
 The current workspace already has dependencies, an application key, migrations, and synthetic demonstration records installed.
@@ -12,11 +14,11 @@ php artisan serve
 
 Open http://127.0.0.1:8000. If you use XAMPP Apache instead, open `http://localhost/tcgc_erdss/public/`. The repository-level `.htaccess` prevents access to private source files; the public directory contains the front controller and browser assets. A virtual host should set its DocumentRoot to this project's `public` directory with `AllowOverride All` and `mod_rewrite` enabled.
 
-For a fresh local checkout:
+For a fresh local SQLite demonstration checkout:
 
 ```powershell
 composer install
-Copy-Item .env.example .env
+Copy-Item docs/demonstration.env.example .env
 New-Item -ItemType Directory -Force storage/framework/cache/data,storage/framework/sessions,storage/framework/views,storage/logs,bootstrap/cache
 New-Item -ItemType File database/database.sqlite
 php artisan key:generate
@@ -41,7 +43,7 @@ The demo seeder refuses to run in production and does not reseed a database with
 
 ## Data sources and dashboard features
 
-The research source is the owner's **FEATURES IN DASHBOARD.docx**. Reference values are maintained in `config/research.php`: retention 2.82/4, workforce 285 across five units, eight HRM means, all eight beta coefficients and p-values, R² .399, seven qualitative themes, and three action tiers. These values are explicitly labeled research baselines. They are never used to fabricate current employees, response sets, or trend history.
+The research source is the owner's **Catipay, J. Full Manuscript FINAL VERSION**, September 2026. Reference values are maintained in `config/research.php`: retention 2.821/4 (displayed 2.82), workforce 285 across five units, 190 survey respondents, 15 interview participants, eight HRM means, Pearson correlations, all eight beta coefficients and p-values, R² .399, seven qualitative themes, and three research-informed action tiers. These values are explicitly labeled research baselines. They are never used to fabricate current employees, response sets, or trend history.
 
 The dashboard's **Data source** filter switches between the research baseline and current assessment records. The local seeded dataset has 30 sample employees and four sample departments; its figures intentionally differ from the institutional baseline. Live mode provides period and unit filters, participation, workforce status rates, assessment history, and comparisons across units and employee categories. Unit heads always receive only their assigned scope, including in exports and policy reports.
 
@@ -85,7 +87,9 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-Run `php artisan config:clear` and `php artisan migrate`. Do **not** use `migrate:fresh` on institutional records. The adoption migration uses `CREATE TABLE IF NOT EXISTS`, applies legacy compatibility upgrades once, and does not automatically seed. Rolling back the initial adoption is deliberately disabled because it could destroy pre-existing domain data. SQLite is the verified runtime for this refactor; MySQL configuration and schema are provided but have not been exercised against a running MySQL server.
+Run `php artisan config:clear` and `php artisan migrate`. Do **not** use `migrate:fresh` on institutional records. The adoption migration uses `CREATE TABLE IF NOT EXISTS`, applies legacy compatibility upgrades once, and does not automatically seed. Rolling back the initial adoption is deliberately disabled because it could destroy pre-existing domain data. MySQL has been exercised locally with strict grouping enabled, including assessment pages and a transactional historical paper-import verification. The regression suite uses isolated in-memory SQLite databases.
+
+For a clean institutional database, migrate without seeding, then run `php artisan retention:initialize` to create private HR access and reference definitions without sample records. Create a draft period and run `php artisan retention:install-questionnaire PERIOD_ID` for the approved 56 items. Reviewed transcribed paper CSV files can be checked with `php artisan retention:import-paper-responses FILE --period=PERIOD_ID`; only `--commit` writes a validated batch into a closed historical period. Paper imports have provenance and duplicate protection, no employee identity/completion links, and no inferred participation percentage. See the client guide for the complete procedure and source-data requirements.
 
 ## Maintenance and checks
 

@@ -20,7 +20,8 @@ if (! is_file($root.'/vendor/autoload.php')) {
 }
 require $root.'/vendor/autoload.php';
 require __DIR__.'/prepare.php';
-if (! is_file($root.'/.env') && ! copy($root.'/.env.example', $root.'/.env')) {
+$environmentTemplate = is_file($root.'/.env.example') ? $root.'/.env.example' : $root.'/docs/demonstration.env.example';
+if (! is_file($root.'/.env') && ! copy($environmentTemplate, $root.'/.env')) {
     throw new RuntimeException('Unable to create the local .env file.');
 }
 Dotenv\Dotenv::createImmutable($root)->safeLoad();

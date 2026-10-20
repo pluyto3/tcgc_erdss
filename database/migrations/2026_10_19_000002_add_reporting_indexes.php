@@ -19,7 +19,7 @@ return new class extends Migration
         foreach ($this->indexes as $table => $indexes) {
             foreach ($indexes as $name => $columns) {
                 if (! Schema::hasIndex($table, $name)) {
-                    Schema::table($table, fn (Blueprint $blueprint) => $blueprint->index($columns, $name));
+                    Schema::table($table, fn(Blueprint $blueprint) => $blueprint->index($columns, $name));
                 }
             }
         }
@@ -30,7 +30,7 @@ return new class extends Migration
         foreach ($this->indexes as $table => $indexes) {
             foreach (array_keys($indexes) as $name) {
                 if (Schema::hasIndex($table, $name)) {
-                    Schema::table($table, fn (Blueprint $blueprint) => $blueprint->dropIndex($name));
+                    Schema::table($table, fn(Blueprint $blueprint) => $blueprint->dropIndex($name));
                 }
             }
         }

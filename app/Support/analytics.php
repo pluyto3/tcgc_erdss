@@ -169,8 +169,27 @@ function respondent_count(PDO $db, int $periodId, ?int $departmentId = null): in
     return (int) $s->fetchColumn();
 }
 
-function participation_rate(PDO $db, int $periodId, ?int $departmentId = null): float
+function period_has_paper_responses(PDO $db, int $periodId): bool
 {
+    // Preserve existing installations while the provenance migration is pending.
+    $tableQuery = $db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite'
+        ? "SELECT 1 FROM sqlite_master WHERE type='table' AND name='paper_response_imports'"
+        : "SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name='paper_response_imports'";
+    if ($db->query($tableQuery)->fetchColumn() === false) {
+        return false;
+    }
+    $statement = $db->prepare('SELECT 1 FROM paper_response_imports WHERE period_id=? LIMIT 1');
+    $statement->execute([$periodId]);
+
+    return $statement->fetchColumn() !== false;
+}
+
+function participation_rate(PDO $db, int $periodId, ?int $departmentId = null): ?float
+{
+    if (period_has_paper_responses($db, $periodId)) {
+        // Paper responses carry no employee completion linkage or historical eligibility roster.
+        return null;
+    }
     if ($departmentId) {
         $s = $db->prepare('SELECT COUNT(*) FROM survey_participation sp JOIN employees e ON e.id=sp.employee_id WHERE sp.period_id=? AND e.department_id=?');
         $s->execute([$periodId, $departmentId]);

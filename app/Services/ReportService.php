@@ -20,10 +20,11 @@ class ReportService
                 ['Active share of recorded workforce', fmt_num(retention_rate($db, $departmentId), 1).'%'],
                 ['Separated share of recorded workforce', fmt_num(turnover_rate($db, $departmentId), 1).'%']];
             if ($periodId) {
+                $participation = participation_rate($db, $periodId, $departmentId);
                 $rows = [...$rows, ['Assessment respondents', respondent_count($db, $periodId, $departmentId)],
                     ['Employee retention mean', $this->score(retention_mean($db, $periodId, $departmentId))],
                     ['Overall HRM mean', $this->score(overall_mean($db, $periodId, $departmentId))],
-                    ['Participation', fmt_num(participation_rate($db, $periodId, $departmentId), 1).'%']];
+                    ['Participation', $participation === null ? 'Not tracked for imported paper responses' : fmt_num($participation, 1).'%']];
             }
         } elseif ($type === 'factors') {
             $headers = ['HRM factor', 'Mean / 4', 'Interpretation'];

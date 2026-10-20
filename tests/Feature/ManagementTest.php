@@ -88,6 +88,35 @@ class ManagementTest extends TestCase
         $this->post('/master-data', ['table' => 'departments', 'name' => 'Student Life', 'code' => 'SL', 'status' => 'active'])->assertRedirect('/master-data?tab=departments');
     }
 
+    public function test_assessment_listing_counts_each_period_and_keeps_empty_periods(): void
+    {
+        $this->asRole('HR Administrator');
+        DB::table('assessment_periods')->insert(['title' => 'Empty assessment', 'start_date' => '2027-01-01', 'end_date' => '2027-03-31']);
+        $periodId = DB::table('assessment_periods')->insertGetId([
+            'title' => 'Populated assessment', 'start_date' => '2027-04-01', 'end_date' => '2027-06-30',
+        ]);
+        $factorId = DB::table('hrm_factors')->where('is_outcome', 0)->value('id');
+        DB::table('survey_questions')->insert([
+            ['period_id' => $periodId, 'factor_id' => $factorId, 'question_text' => 'First question'],
+            ['period_id' => $periodId, 'factor_id' => $factorId, 'question_text' => 'Second question'],
+        ]);
+        DB::table('survey_responses')->insert([
+            ['period_id' => $periodId], ['period_id' => $periodId], ['period_id' => $periodId],
+        ]);
+
+        $html = $this->get('/assessments')->assertOk()->getContent();
+        $document = new \DOMDocument;
+        @$document->loadHTML($html);
+        $xpath = new \DOMXPath($document);
+        foreach (['Empty assessment' => ['0', '0'], 'Populated assessment' => ['2', '3']] as $title => [$questions, $responses]) {
+            $rows = $xpath->query('//tr[td/strong[normalize-space(.)="'.$title.'"]]');
+            $this->assertCount(1, $rows, $title.' should appear exactly once.');
+            $cells = $xpath->query('./td', $rows->item(0));
+            $this->assertSame($questions, trim($cells->item(2)->textContent));
+            $this->assertSame($responses, trim($cells->item(3)->textContent));
+        }
+    }
+
     public function test_per_factor_privacy_threshold_and_csv_formula_escaping(): void
     {
         $this->asRole('HR Administrator');

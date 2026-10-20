@@ -1,15 +1,15 @@
 <?php
 
 $rule=decision_thresholds($db);
-echo '<div class="notice"><strong>Client-approved system configuration.</strong> These values remain editable by HR Administrator so TCGC can update policy and branding settings without changing source code.</div>';
+echo '<div class="notice"><strong>Institution configuration.</strong> HR administrators can update branding, privacy settings, and management action thresholds. Confirm these settings with the institution before using them for real assessments.</div>';
 
 echo '<div class="form-card" style="margin-top:14px"><h2>Institution, Branding & System</h2><form method="post" enctype="multipart/form-data">'.csrf_field().'<input type="hidden" name="action" value="settings"><div class="form-grid">';
 echo '<div class="form-group"><label>Institution Name</label><input name="institution_name" value="'.e(setting($db,'institution_name','Tangub City Global College')).'"></div>';
 echo '<div class="form-group"><label>System Name</label><input name="system_name" value="'.e(setting($db,'system_name','TCGC Employee Retention Decision Support System')).'"></div>';
 echo '<div class="form-group full"><label>Dashboard Title</label><input name="dashboard_title" value="'.e(setting($db,'dashboard_title','HRM Analytics & Decision Support Dashboard')).'"></div>';
-echo '<div class="form-group"><label>Primary Color</label><input type="color" name="primary_color" value="'.e(setting($db,'primary_color','#173a5e')).'"></div>';
-echo '<div class="form-group"><label>Accent Color</label><input type="color" name="accent_color" value="'.e(setting($db,'accent_color','#2f6f98')).'"></div>';
-echo '<div class="form-group full"><label>Official Logo</label><input type="file" name="logo" accept="image/png,image/jpeg,image/webp"><span class="help">PNG, JPEG, or WEBP up to 2 MB. Current: '.e(setting($db,'logo_path','Not uploaded')).'</span></div>';
+echo '<div class="form-group"><label>Primary Color</label><input type="color" name="primary_color" value="'.e(setting($db,'primary_color',config('branding.primary_color'))).'"></div>';
+echo '<div class="form-group"><label>Accent Color</label><input type="color" name="accent_color" value="'.e(setting($db,'accent_color',config('branding.accent_color'))).'"></div>';
+echo '<div class="form-group full"><label>Official Logo</label><input type="file" name="logo" accept="image/png,image/jpeg,image/webp"><span class="help">The college logo is included. Upload a PNG, JPEG, or WEBP up to 2 MB to replace it. Current: '.e(setting($db,'logo_path') ?: 'Included TCGC logo').'</span></div>';
 echo '<div class="form-group full"><label>Report Footer</label><input name="report_footer" value="'.e(setting($db,'report_footer','TCGC Employee Retention Decision Support System')).'"></div>';
 echo '<div class="form-group"><label>Assessment Frequency</label><select name="assessment_frequency">';foreach(['Quarterly','Semestral','Annual','Custom'] as $x) echo '<option'.selected(setting($db,'assessment_frequency','Semestral'),$x).'>'.e($x).'</option>';echo '</select></div>';
 echo '<div class="form-group"><label>Default Scale</label><input name="default_scale" value="'.e(setting($db,'default_scale','4-point Likert')).'"></div>';

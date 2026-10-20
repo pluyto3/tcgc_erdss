@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Modules;
 use App\Http\Controllers\ModuleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class AssessmentsController extends ModuleController
@@ -21,36 +22,49 @@ class AssessmentsController extends ModuleController
                     'scale_labels' => ['required', 'string', 'max:2000']]);
                 $id = $data['id'] ?? null;
                 unset($data['id']);
-                if ($id && DB::table('survey_responses')->where('period_id', $id)->exists()) {
-                    $period = DB::table('assessment_periods')->find($id);
-                    if ($period->scale_min != $data['scale_min'] || $period->scale_max != $data['scale_max']) {
+                $periodId = DB::transaction(function () use ($id, $data): int {
+                    $period = $id ? DB::table('assessment_periods')->where('id', $id)->lockForUpdate()->first() : null;
+                    if ($id && $data['status'] !== 'closed' && Schema::hasTable('paper_response_imports')
+                        && DB::table('paper_response_imports')->where('period_id', $id)->exists()) {
+                        throw ValidationException::withMessages(['status' => 'Historical paper assessments must remain closed after responses are imported. Create a separate assessment for online collection.']);
+                    }
+                    if ($id && DB::table('survey_responses')->where('period_id', $id)->exists()
+                        && ($period->scale_min != $data['scale_min'] || $period->scale_max != $data['scale_max'])) {
                         throw ValidationException::withMessages(['scale_min' => 'The rating scale cannot change after responses have been collected.']);
                     }
-                }
-                if ($id) {
-                    DB::table('assessment_periods')->where('id', $id)->update([...$data, 'updated_at' => now()]);
-                } else {
-                    $id = DB::table('assessment_periods')->insertGetId([...$data, 'created_at' => now(), 'updated_at' => now()]);
-                }
-                $periodId = $id;
-                audit(db(), user_id(), 'save', 'assessment', $id, $data['title']);
+                    if ($id) {
+                        DB::table('assessment_periods')->where('id', $id)->update([...$data, 'updated_at' => now()]);
+                    } else {
+                        $id = DB::table('assessment_periods')->insertGetId([...$data, 'created_at' => now(), 'updated_at' => now()]);
+                    }
+                    audit(db(), user_id(), 'save', 'assessment', $id, $data['title']);
+
+                    return $id;
+                });
             } else {
                 $request->validate(['period_id' => ['required', 'integer', 'exists:assessment_periods,id']]);
                 $periodId = $request->integer('period_id');
-                if ($action === 'add_question') {
-                    $data = $request->validate(['factor_id' => ['required', 'integer', 'exists:hrm_factors,id'],
-                        'question_text' => ['required', 'string', 'max:3000'], 'display_order' => ['required', 'integer', 'min:0']]);
-                    $id = DB::table('survey_questions')->insertGetId([...$data, 'period_id' => $periodId, 'is_required' => 1, 'created_at' => now()]);
-                    audit(db(), user_id(), 'create', 'survey_question', $id, 'Question added');
-                } else {
-                    $request->validate(['id' => ['required', 'integer', 'exists:survey_questions,id']]);
-                    $id = $request->integer('id');
-                    if (DB::table('survey_response_items')->where('question_id', $id)->exists()) {
-                        throw ValidationException::withMessages(['id' => 'Questions with collected answers must be retained.']);
+                DB::transaction(function () use ($request, $action, $periodId): void {
+                    // Submission locks this same period before reading its questions.
+                    DB::table('assessment_periods')->where('id', $periodId)->lockForUpdate()->first();
+                    if (DB::table('survey_responses')->where('period_id', $periodId)->exists()) {
+                        throw ValidationException::withMessages(['period_id' => 'The questionnaire is locked because responses have been collected. Create a new assessment period to change its questions.']);
                     }
-                    DB::table('survey_questions')->where('id', $id)->where('period_id', $periodId)->delete();
-                    audit(db(), user_id(), 'delete', 'survey_question', $id, 'Unused question removed');
-                }
+                    if ($action === 'add_question') {
+                        $data = $request->validate(['factor_id' => ['required', 'integer', 'exists:hrm_factors,id'],
+                            'question_text' => ['required', 'string', 'max:3000'], 'display_order' => ['required', 'integer', 'min:0']]);
+                        $id = DB::table('survey_questions')->insertGetId([...$data, 'period_id' => $periodId, 'is_required' => 1, 'created_at' => now()]);
+                        audit(db(), user_id(), 'create', 'survey_question', $id, 'Question added');
+                    } else {
+                        $request->validate(['id' => ['required', 'integer', 'exists:survey_questions,id']]);
+                        $id = $request->integer('id');
+                        if (DB::table('survey_response_items')->where('question_id', $id)->exists()) {
+                            throw ValidationException::withMessages(['id' => 'Questions with collected answers must be retained.']);
+                        }
+                        DB::table('survey_questions')->where('id', $id)->where('period_id', $periodId)->delete();
+                        audit(db(), user_id(), 'delete', 'survey_question', $id, 'Unused question removed');
+                    }
+                });
             }
             flash('success', 'Assessment updated.');
 

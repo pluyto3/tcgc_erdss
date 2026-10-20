@@ -16,7 +16,8 @@ class DashboardService
             'department_id' => ['nullable', 'integer', 'min:0'],
         ]);
         $unitScope = role() === 'Department Head';
-        $dataset = $unitScope ? 'live' : ($validated['dataset'] ?? 'baseline');
+        $demo = $this->settings->get('demo_mode', '1') === '1';
+        $dataset = $unitScope ? 'live' : ($validated['dataset'] ?? ($demo ? 'baseline' : 'live'));
         $departmentId = $unitScope ? (int) current_user()['department_id'] : ((int) ($validated['department_id'] ?? 0) ?: null);
         if ($departmentId) {
             abort_unless(DB::table('departments')->where('id', $departmentId)->exists(), 422, 'Choose an existing operational unit.');
@@ -24,7 +25,6 @@ class DashboardService
         $periods = DB::table('assessment_periods')->whereIn('status', ['active', 'closed'])->orderByDesc('start_date')->orderByDesc('id')->get();
         $period = isset($validated['period_id']) ? $periods->firstWhere('id', (int) $validated['period_id']) : ($periods->firstWhere('status', 'active') ?? $periods->first());
         $minimum = max(2, (int) $this->settings->get('minimum_group_size', 5));
-        $demo = $this->settings->get('demo_mode', '1') === '1';
         $baseline = $dataset === 'baseline';
         $factors = [];
         $respondents = 0;
@@ -100,6 +100,9 @@ class DashboardService
         $departments = DB::table('departments')->where('status', 'active')->orderBy('name')->get();
         $scope = $departmentId ? ($departments->firstWhere('id', $departmentId)?->name ?? 'Assigned unit') : 'All operational units';
         $source = $baseline ? 'Research baseline' : ($demo ? 'Demonstration data' : 'Operational data');
+        if (! $baseline && $period && period_has_paper_responses(db(), $period->id)) {
+            $source = 'Imported paper responses';
+        }
 
         return compact('dataset', 'baseline', 'demo', 'unitScope', 'departmentId', 'periods', 'period', 'minimum', 'factors', 'retention', 'headcount', 'units', 'respondents', 'participation', 'retentionRate', 'turnoverRate', 'trend', 'lowest', 'drivers', 'activeInterventions', 'pendingApprovals', 'themes', 'departments', 'scope', 'source', 'cohorts');
     }

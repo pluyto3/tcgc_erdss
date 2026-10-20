@@ -18,7 +18,7 @@ foreach ($directory in @('app', 'config', 'database', 'docs', 'public', 'resourc
         $files.Add($file)
     }
 }
-foreach ($relative in @('artisan', 'composer.json', 'composer.lock', 'phpunit.xml', 'README.md', 'START-HERE.md', '.env.example', '.gitignore', '.htaccess', 'bootstrap/app.php', 'bootstrap/providers.php', 'bootstrap/cache/.gitignore', 'storage/.gitignore', 'storage/backups/original-project.zip')) {
+foreach ($relative in @('artisan', 'composer.json', 'composer.lock', 'phpunit.xml', 'README.md', 'START-HERE.md', '.gitignore', '.htaccess', 'bootstrap/app.php', 'bootstrap/providers.php', 'bootstrap/cache/.gitignore', 'storage/.gitignore', 'storage/backups/original-project.zip')) {
     $files.Add((Get-Item -LiteralPath (Join-Path $projectRoot $relative)))
 }
 
@@ -38,7 +38,7 @@ try {
     if ($entryNames -contains 'tcgc_erdss/.env' -or @($entryNames | Where-Object { $_ -match '\.sqlite(?:-.*)?$|^tcgc_erdss/storage/(framework|logs|composer-cache)/' }).Count -gt 0) {
         throw 'The package unexpectedly contains local environment or runtime state.'
     }
-    foreach ($required in @('artisan', 'vendor/autoload.php', 'scripts/setup-local.php', 'START-HERE.md', '.env.example')) {
+    foreach ($required in @('artisan', 'vendor/autoload.php', 'scripts/setup-local.php', 'START-HERE.md', 'docs/demonstration.env.example', 'docs/institutional.env.example', 'docs/CLIENT-HANDOVER-GUIDE.md')) {
         if ($entryNames -notcontains ('tcgc_erdss/' + $required)) { throw "Missing required package file: $required" }
     }
     Write-Output "Verified $($check.Entries.Count) archive entries."
